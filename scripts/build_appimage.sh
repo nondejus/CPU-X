@@ -16,8 +16,8 @@ safeCopy() {
 	local src=("${@:1:$#-1}")
 	local dst="${*:$#}"
 
-	for s in "${src[@]}"; do
-		runCmd cp "$s" --archive --parents --target-directory="$dst" --verbose
+	for elem in "${src[@]}"; do
+		runCmd cp "$elem" --archive --parents --target-directory="$dst" --verbose
 	done
 }
 
@@ -29,28 +29,24 @@ fi
 
 WORKSPACE="$1"
 APPDIR="$2"
-LIBARCHDIR="lib/x86_64-linux-gnu"
 
 # Add extra files in AppDir
 [[ -z "$VERSION" ]] && cp --recursive --verbose "$WORKSPACE/src" "$APPDIR/usr/" # Debug info
 safeCopy \
-	"/usr/share/"{glib-2.0,terminfo} \
-	"/usr/$LIBARCHDIR/"{gdk-pixbuf-2.0,gtk-3.0,libgtk-3-0} \
-	"/usr/$LIBARCHDIR/libgdk_pixbuf"* \
-	"/usr/$LIBARCHDIR/libgobject"* \
-	"/usr/$LIBARCHDIR/libgio"* \
+	"/usr/share/terminfo" \
 	"$APPDIR"
-runCmd glib-compile-schemas "$APPDIR/usr/share/glib-2.0/schemas"
 
 # Download linuxdeploy
 BUNDLER="$WORKSPACE/linuxdeploy.AppImage"
+runCmd wget --no-verbose "https://raw.githubusercontent.com/X0rg/linuxdeploy-plugin-gtk/pr/linuxdeploy-plugin-gtk.sh"
 runCmd wget --no-verbose "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" --output-document="$BUNDLER"
-runCmd chmod --verbose a+x "$BUNDLER"
+runCmd chmod --verbose a+x linuxdeploy*
 
 # Set useful variables for linuxdeploy
 export ARCH=x86_64
 export UPDATE_INFORMATION="gh-releases-zsync|${GITHUB_REPOSITORY//\//|}|${VERSION:-"continuous"}|CPU-X-*$ARCH.AppImage.zsync"
 export VERBOSE=1
+export DEBUG=1
 export DISABLE_COPYRIGHT_FILES_DEPLOYMENT=1
 
 # Run linuxdeploy
@@ -59,5 +55,6 @@ runCmd "$BUNDLER" \
 	--appdir="$APPDIR" \
 	--custom-apprun="$WORKSPACE/scripts/run_appimage.sh" \
 	--desktop-file="$APPDIR/usr/share/applications/cpu-x.desktop" \
+	--plugin gtk \
 	--output appimage \
 	--verbosity=1

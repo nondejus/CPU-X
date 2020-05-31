@@ -3,7 +3,7 @@ name: AppImage Continuous
 on:
   push:
     branches:
-      - master
+      - '*'
 
 jobs:
   linux-appimage-continuous:
@@ -26,6 +26,7 @@ jobs:
         path: AppImage/*
 
     - name: Delete old continuous release
+      if: github.ref == 'refs/heads/master'
       uses: dev-drprasad/delete-tag-and-release@v0.1.2
       with:
         delete_release: true
@@ -34,6 +35,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create continuous release
+      if: github.ref == 'refs/heads/master'
       uses: ncipollo/release-action@v1
       with:
         token: "${{ secrets.GITHUB_TOKEN }}"
